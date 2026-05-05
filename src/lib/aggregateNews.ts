@@ -8,17 +8,6 @@ const CACHE_TTL_MS = 120_000;
 let cache: { items: NewsItem[]; fetchedAt: number } | null = null;
 let lastGood: { items: NewsItem[]; fetchedAt: number } | null = null;
 
-async function enrichTranslations(items: NewsItem[]): Promise<NewsItem[]> {
-  if (!process.env.OPENAI_API_KEY) return items;
-  try {
-    const { attachChineseTranslations } = await import("@/lib/translateNews");
-    return await attachChineseTranslations(items);
-  } catch {
-    // Optional enrichment only: if SDK/runtime differs on edge, keep core feed available.
-    return items;
-  }
-}
-
 function mergeAndDedupe(batches: NewsItem[][]): NewsItem[] {
   const map = new Map<string, NewsItem>();
   for (const batch of batches) {
@@ -63,7 +52,7 @@ export async function collectAndEnrichNews(): Promise<{
   }
 
   let items = mergeAndDedupe(batches);
-  items = await enrichTranslations(items.slice(0, 80));
+  items = items.slice(0, 80);
 
   const warning =
     errors.length > 0 ? `部分源暂时不可用：${errors.join(" | ")}` : undefined;
