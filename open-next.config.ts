@@ -13,18 +13,6 @@ const base = withCloudflare({
       queue: "dummy",
     },
   },
-  functions: {
-    newsEdgeRoute: {
-      placement: "global",
-      routes: "app/api/news/route",
-      patterns: "/api/news",
-    },
-    analyzeEdgeRoute: {
-      placement: "global",
-      routes: "app/api/analyze/route",
-      patterns: "/api/analyze",
-    },
-  },
 });
 
 export default {
