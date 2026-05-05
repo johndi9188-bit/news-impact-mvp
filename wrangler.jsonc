@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "news-impact-mvp",
+  "workers_dev": true,
   "compatibility_date": "2026-05-05",
   // Node built-ins in Workers: use `nodejs_compat` (Wrangler has no `node_compat` field).
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],

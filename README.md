@@ -114,7 +114,7 @@ Linux/macOS 可把 `^` 换成行尾 `\`。镜像内已 `output: "standalone"`，
 
 **注意**：无服务器函数有**执行时间上限**（免费档往往约 10–60 秒级）。首次请求 `/api/news` 会并行抓取多路海外 RSS，若在目标地区网络较慢，可能偶发超时；可换 Pro 档、或改用境外构建机/自有 VPS 更稳。
 
-### 方式四：Cloudflare Pages（Next.js 适配）
+### 方式四：Cloudflare Workers（OpenNext + Wrangler）
 
 本项目已改为 **OpenNext Cloudflare 适配器**（Next.js 16 推荐）：
 
@@ -129,7 +129,7 @@ Cloudflare 构建/部署常用命令：
 - 构建：`npm run build:cf`
 - 部署：`npm run deploy:cf`
 
-在 Cloudflare Pages 项目里配置环境变量（Production/Preview）：
+在 Cloudflare Workers（或 CI 部署环境）里配置环境变量：
 
 - `OPENAI_API_KEY`（必填）
 - `OPENAI_BASE_URL`、`OPENAI_MODEL`（可选）
@@ -142,12 +142,13 @@ Cloudflare 构建/部署常用命令：
 - 浏览器打开：`https://你的域名/`（或 `http://服务器IP:3001`）
 - 直接访问：`/api/news`，应返回 JSON 列表
 
-### GitHub Actions（CI + VPS 自动部署）
+### GitHub Actions（CI + 自动部署）
 
 仓库已包含：
 
 - [`.github/workflows/ci.yml`](.github/workflows/ci.yml)：每次 push / PR 自动执行 `npm ci`、`npm run lint`、`npm run build`
-- [`.github/workflows/deploy-vps.yml`](.github/workflows/deploy-vps.yml)：`main` 分支更新后自动 SSH 到 VPS，执行拉取并 `docker compose up -d --build`
+- [`.github/workflows/deploy-workers.yml`](.github/workflows/deploy-workers.yml)：`main` 分支更新后自动执行 `npm run deploy:cf` 发布到 Cloudflare Workers
+- [`.github/workflows/deploy-vps.yml`](.github/workflows/deploy-vps.yml)：`main` 分支更新后自动 SSH 到 VPS，执行拉取并 `docker compose up -d --build`（可选）
 
 首次在 VPS 初始化可用：
 
@@ -156,7 +157,12 @@ chmod +x scripts/vps-bootstrap.sh
 ./scripts/vps-bootstrap.sh <你的仓库HTTPS地址> /opt/news-impact-mvp
 ```
 
-自动部署前，请在 GitHub 仓库 `Settings -> Secrets and variables -> Actions` 添加：
+Cloudflare Workers 自动部署前，请在 GitHub 仓库 `Settings -> Secrets and variables -> Actions` 添加：
+
+- `CLOUDFLARE_API_TOKEN`：Cloudflare API Token（需包含 Workers Scripts Edit、Workers Routes Edit、Account Read 等最小权限）
+- `CLOUDFLARE_ACCOUNT_ID`：Cloudflare Account ID
+
+如果你仍使用 VPS 自动部署，再额外添加：
 
 - `VPS_HOST`：VPS 公网 IP 或域名
 - `VPS_USER`：SSH 用户名（如 `root` 或部署专用用户）
