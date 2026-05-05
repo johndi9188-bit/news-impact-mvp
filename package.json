@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "dev:lan": "next dev -H 0.0.0.0 -p 3001",
-    "build": "next build --webpack",
+    "build": "next build",
     "build:cf": "opennextjs-cloudflare build",
     "preview:cf": "opennextjs-cloudflare build && wrangler dev",
     "deploy:cf": "opennextjs-cloudflare build && wrangler deploy",
