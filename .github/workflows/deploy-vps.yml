@@ -1,14 +1,20 @@
 name: Deploy to VPS
 
 on:
-  push:
+  # Only deploy after CI passes on main — avoids concurrent job pile-up.
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
   deploy:
+    if: >
+      (github.event_name == 'workflow_dispatch' ||
+       github.event.workflow_run.conclusion == 'success') &&
+      secrets.VPS_HOST != '' && secrets.VPS_USER != '' && secrets.VPS_SSH_KEY != ''
     runs-on: ubuntu-latest
-    if: ${{ secrets.VPS_HOST != '' && secrets.VPS_USER != '' && secrets.VPS_SSH_KEY != '' }}
 
     steps:
       - name: Run deploy script on VPS

@@ -1,8 +1,12 @@
 name: Deploy to Cloudflare Workers
 
 on:
-  push:
+  # Only deploy after CI passes on main — avoids concurrent job pile-up.
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types: [completed]
+  # Keep manual trigger for hotfixes.
   workflow_dispatch:
 
 concurrency:
@@ -11,6 +15,10 @@ concurrency:
 
 jobs:
   deploy_workers:
+    # For workflow_run: only run when CI succeeded. workflow_dispatch always runs.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -21,6 +29,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # workflow_run doesn't inherit the triggering SHA automatically.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
