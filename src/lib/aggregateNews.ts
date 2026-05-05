@@ -2,6 +2,7 @@ import type { NewsItem, NewsPayload } from "@/types/news";
 import { fetchFinnhubGeneralNews } from "@/lib/finnhub";
 import { fetchFredDigestItems } from "@/lib/fred";
 import { getRSSItemsPartial } from "@/lib/rss";
+import { attachChineseTranslations } from "@/lib/translateNews";
 
 const CACHE_TTL_MS = 120_000;
 
@@ -52,7 +53,7 @@ export async function collectAndEnrichNews(): Promise<{
   }
 
   let items = mergeAndDedupe(batches);
-  items = items.slice(0, 80);
+  items = await attachChineseTranslations(items.slice(0, 80));
 
   const warning =
     errors.length > 0 ? `部分源暂时不可用：${errors.join(" | ")}` : undefined;

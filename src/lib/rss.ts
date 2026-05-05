@@ -56,6 +56,17 @@ function decodeXml(value: string): string {
     .replaceAll("&#39;", "'");
 }
 
+function stripHtml(raw: string): string {
+  return raw
+    .replace(/<!\[CDATA\[[\s\S]*?\]\]>/gi, (m) =>
+      m.slice(9, -3),
+    )
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function extractTag(block: string, tag: string): string | undefined {
   const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
   const m = block.match(re);
@@ -64,7 +75,7 @@ function extractTag(block: string, tag: string): string | undefined {
     .replace(/^<!\[CDATA\[/i, "")
     .replace(/\]\]>$/i, "")
     .trim();
-  return decodeXml(raw);
+  return stripHtml(decodeXml(raw)) || undefined;
 }
 
 type ParsedRssItem = {
