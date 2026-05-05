@@ -1,12 +1,16 @@
 import { withCloudflare } from "@opennextjs/aws/helpers/withCloudflare.js";
-import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
 
-export default withCloudflare({
+const base = withCloudflare({
   default: {
     placement: "regional",
     runtime: "node",
     override: {
-      incrementalCache: r2IncrementalCache,
+      wrapper: "cloudflare-node",
+      converter: "edge",
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
     },
   },
   functions: {
@@ -22,3 +26,18 @@ export default withCloudflare({
     },
   },
 });
+
+export default {
+  ...base,
+  edgeExternals: ["node:crypto"],
+  middleware: {
+    ...base.middleware,
+    override: {
+      ...base.middleware.override,
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
+    },
+  },
+};

@@ -135,7 +135,7 @@ Cloudflare 构建/部署常用命令：
 - `OPENAI_BASE_URL`、`OPENAI_MODEL`（可选）
 - `FINNHUB_API_KEY`、`FRED_API_KEY`（可选）
 
-说明：本地 Docker/VPS 仍可继续用 `npm run build` + `output: "standalone"`；Cloudflare 构建由 OpenNext 适配器处理。`wrangler.jsonc` 里的 `name`、R2 bucket 名可按需改成你自己的命名。
+说明：本地 Docker/VPS 仍可继续用 `npm run build` + `output: "standalone"`；Cloudflare 构建由 OpenNext 适配器处理。`wrangler.jsonc` 里的 `name` 可按需改成你自己的命名。
 
 ### 部署后自检
 
