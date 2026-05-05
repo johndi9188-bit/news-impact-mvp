@@ -8,6 +8,8 @@ export type NewsItem = {
   source: string;
   summary?: string;
   summaryZh?: string;
+  /** AI 重要性评分 1–10；越高越重要（央行/政策/重大事件等） */
+  importance?: number;
 };
 
 export type NewsPayload = {

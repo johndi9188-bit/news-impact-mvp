@@ -3,6 +3,7 @@ import { fetchFinnhubGeneralNews } from "@/lib/finnhub";
 import { fetchFredDigestItems } from "@/lib/fred";
 import { getRSSItemsPartial } from "@/lib/rss";
 import { attachChineseTranslations } from "@/lib/translateNews";
+import { attachImportanceScores } from "@/lib/scoreNews";
 
 const CACHE_TTL_MS = 120_000;
 
@@ -54,6 +55,7 @@ export async function collectAndEnrichNews(): Promise<{
 
   let items = mergeAndDedupe(batches);
   items = await attachChineseTranslations(items.slice(0, 80));
+  items = await attachImportanceScores(items);
 
   const warning =
     errors.length > 0 ? `部分源暂时不可用：${errors.join(" | ")}` : undefined;

@@ -19,6 +19,32 @@ function directionLabel(d: string): string {
   return "不确定";
 }
 
+function importanceBadge(score: number): { label: string; className: string } {
+  if (score >= 9)
+    return {
+      label: `🔴 ${score}`,
+      className:
+        "rounded-full bg-rose-100 px-2 py-0.5 text-xs font-bold text-rose-800 dark:bg-rose-950/70 dark:text-rose-200",
+    };
+  if (score >= 7)
+    return {
+      label: `🟠 ${score}`,
+      className:
+        "rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-800 dark:bg-orange-950/70 dark:text-orange-200",
+    };
+  if (score >= 5)
+    return {
+      label: `🟡 ${score}`,
+      className:
+        "rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-200",
+    };
+  return {
+    label: `${score}`,
+    className:
+      "rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400",
+  };
+}
+
 function sentimentLabel(s: AnalysisResult["marketSentiment"]): string {
   if (s === "bullish") return "利好倾向 / 风险偏好";
   if (s === "bearish") return "利空倾向 / 避险";
@@ -189,9 +215,15 @@ export default function Home() {
                 className="flex w-full flex-col gap-1 px-4 py-3 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-800/80"
               >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    {it.source}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      {it.source}
+                    </span>
+                    {it.importance !== undefined && (() => {
+                      const b = importanceBadge(it.importance);
+                      return <span className={b.className} title={`重要性评分 ${it.importance}/10`}>{b.label}</span>;
+                    })()}
+                  </div>
                   <span className="text-xs text-zinc-500 dark:text-zinc-500">
                     {formatTime(it.publishedAt)}
                   </span>
@@ -237,9 +269,19 @@ export default function Home() {
           <aside className="relative z-50 flex h-full w-full max-w-lg flex-col border-l border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
             <div className="flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800">
               <div className="min-w-0">
-                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                  {selected.source}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    {selected.source}
+                  </p>
+                  {selected.importance !== undefined && (() => {
+                    const b = importanceBadge(selected.importance);
+                    return (
+                      <span className={b.className} title={`重要性评分 ${selected.importance}/10`}>
+                        {b.label} <span className="font-normal opacity-70">/ 10</span>
+                      </span>
+                    );
+                  })()}
+                </div>
                 <div className="mt-1 space-y-1">
                   <h2 className="text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
                     {selected.title}
