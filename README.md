@@ -114,10 +114,65 @@ Linux/macOS 可把 `^` 换成行尾 `\`。镜像内已 `output: "standalone"`，
 
 **注意**：无服务器函数有**执行时间上限**（免费档往往约 10–60 秒级）。首次请求 `/api/news` 会并行抓取多路海外 RSS，若在目标地区网络较慢，可能偶发超时；可换 Pro 档、或改用境外构建机/自有 VPS 更稳。
 
+### 方式四：Cloudflare Pages（Next.js 适配）
+
+本项目已改为 **OpenNext Cloudflare 适配器**（Next.js 16 推荐）：
+
+- API Route 已声明 `runtime = "edge"`
+- 已移除 Node `crypto` 依赖，改为 Edge 兼容 ID 生成
+- 已提供脚本：`npm run build:cf`
+- 已包含 [`open-next.config.ts`](open-next.config.ts) 与 [`wrangler.jsonc`](wrangler.jsonc)
+
+Cloudflare 构建/部署常用命令：
+
+- 本地预览：`npm run preview:cf`
+- 构建：`npm run build:cf`
+- 部署：`npm run deploy:cf`
+
+在 Cloudflare Pages 项目里配置环境变量（Production/Preview）：
+
+- `OPENAI_API_KEY`（必填）
+- `OPENAI_BASE_URL`、`OPENAI_MODEL`（可选）
+- `FINNHUB_API_KEY`、`FRED_API_KEY`（可选）
+
+说明：本地 Docker/VPS 仍可继续用 `npm run build` + `output: "standalone"`；Cloudflare 构建由 OpenNext 适配器处理。`wrangler.jsonc` 里的 `name`、R2 bucket 名可按需改成你自己的命名。
+
 ### 部署后自检
 
 - 浏览器打开：`https://你的域名/`（或 `http://服务器IP:3001`）
 - 直接访问：`/api/news`，应返回 JSON 列表
+
+### GitHub Actions（CI + VPS 自动部署）
+
+仓库已包含：
+
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml)：每次 push / PR 自动执行 `npm ci`、`npm run lint`、`npm run build`
+- [`.github/workflows/deploy-vps.yml`](.github/workflows/deploy-vps.yml)：`main` 分支更新后自动 SSH 到 VPS，执行拉取并 `docker compose up -d --build`
+
+首次在 VPS 初始化可用：
+
+```bash
+chmod +x scripts/vps-bootstrap.sh
+./scripts/vps-bootstrap.sh <你的仓库HTTPS地址> /opt/news-impact-mvp
+```
+
+自动部署前，请在 GitHub 仓库 `Settings -> Secrets and variables -> Actions` 添加：
+
+- `VPS_HOST`：VPS 公网 IP 或域名
+- `VPS_USER`：SSH 用户名（如 `root` 或部署专用用户）
+- `VPS_SSH_KEY`：私钥全文（PEM/OpenSSH）
+- `VPS_PORT`：可选，默认 `22`
+- `VPS_APP_DIR`：可选，默认 `/opt/news-impact-mvp`
+
+部署工作流会在服务器执行：
+
+```bash
+cd $VPS_APP_DIR
+git fetch --all --prune
+git checkout main
+git reset --hard origin/main
+docker compose -f docker-compose.prod.yml up -d --build
+```
 
 ## API 说明
 

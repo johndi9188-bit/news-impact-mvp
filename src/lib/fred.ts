@@ -1,5 +1,5 @@
-import { createHash } from "crypto";
 import type { NewsItem } from "@/types/news";
+import { stableId } from "@/lib/id";
 
 const FETCH_TIMEOUT_MS = 10_000;
 const BASE = "https://api.stlouisfed.org/fred";
@@ -61,10 +61,7 @@ export async function fetchFredDigestItems(): Promise<{
 
       const link = `https://fred.stlouisfed.org/series/${encodeURIComponent(s.id)}`;
       const title = `[FRED] ${s.titleZh} 最新：${latest.value}（截至 ${latest.date}）`;
-      const id = createHash("sha256")
-        .update(`fred-${s.id}-${latest.date}`)
-        .digest("hex")
-        .slice(0, 24);
+      const id = stableId(`fred-${s.id}-${latest.date}`, 24);
       const publishedAt = `${latest.date}T16:00:00.000Z`;
 
       items.push({

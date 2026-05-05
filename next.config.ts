@@ -10,8 +10,10 @@ const extraDevHosts =
     .map((s) => s.trim())
     .filter(Boolean) ?? [];
 
+const isCloudflarePages = process.env.CF_PAGES === "1";
+
 const nextConfig: NextConfig = {
-  output: "standalone",
+  ...(isCloudflarePages ? {} : { output: "standalone" }),
   allowedDevOrigins: ["127.0.0.1", ...extraDevHosts],
 };
 

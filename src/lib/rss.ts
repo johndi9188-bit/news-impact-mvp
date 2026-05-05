@@ -1,6 +1,5 @@
-import { createHash } from "crypto";
-import Parser from "rss-parser";
 import type { NewsItem } from "@/types/news";
+import { stableId } from "@/lib/id";
 
 type FeedSource = { url: string; source: string };
 
@@ -27,11 +26,6 @@ const HTTP_HEADERS: Record<string, string> = {
   Accept: "application/rss+xml, application/xml, text/xml, */*",
 };
 
-const parser = new Parser({
-  timeout: FETCH_TIMEOUT_MS,
-  headers: HTTP_HEADERS,
-});
-
 function normalizeLink(link: string): string {
   try {
     const u = new URL(link);
@@ -44,13 +38,77 @@ function normalizeLink(link: string): string {
 
 function itemId(link: string, guid?: string): string {
   const raw = guid && guid !== link ? `${guid}::${link}` : link;
-  return createHash("sha256").update(raw).digest("hex").slice(0, 24);
+  return stableId(raw, 24);
 }
 
-function parseDate(item: { pubDate?: string; isoDate?: string }): Date {
-  const s = item.isoDate || item.pubDate;
+function parseDate(input: { pubDate?: string; isoDate?: string }): Date {
+  const s = input.isoDate || input.pubDate;
   const d = s ? new Date(s) : new Date();
   return Number.isNaN(d.getTime()) ? new Date() : d;
+}
+
+function decodeXml(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", "\"")
+    .replaceAll("&#39;", "'");
+}
+
+function extractTag(block: string, tag: string): string | undefined {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
+  const m = block.match(re);
+  if (!m?.[1]) return undefined;
+  const raw = m[1]
+    .replace(/^<!\[CDATA\[/i, "")
+    .replace(/\]\]>$/i, "")
+    .trim();
+  return decodeXml(raw);
+}
+
+type ParsedRssItem = {
+  title?: string;
+  link?: string;
+  guid?: string;
+  pubDate?: string;
+  isoDate?: string;
+  contentSnippet?: string;
+  summary?: string;
+};
+
+function parseRssItems(xml: string): ParsedRssItem[] {
+  const blocks = [...xml.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
+  if (blocks.length === 0) {
+    const entries = [...xml.matchAll(/<entry\b[^>]*>([\s\S]*?)<\/entry>/gi)];
+    return entries.map((m) => {
+      const block = m[1] ?? "";
+      const atomLink =
+        block.match(/<link[^>]*href=["']([^"']+)["'][^>]*\/?>/i)?.[1] ??
+        extractTag(block, "link");
+      return {
+        title: extractTag(block, "title"),
+        link: atomLink,
+        guid: extractTag(block, "id"),
+        pubDate: extractTag(block, "published"),
+        isoDate: extractTag(block, "updated"),
+        summary: extractTag(block, "summary") ?? extractTag(block, "content"),
+      };
+    });
+  }
+  return blocks.map((m) => {
+    const block = m[1] ?? "";
+    return {
+      title: extractTag(block, "title"),
+      link: extractTag(block, "link"),
+      guid: extractTag(block, "guid"),
+      pubDate: extractTag(block, "pubDate"),
+      isoDate: extractTag(block, "isoDate"),
+      contentSnippet:
+        extractTag(block, "description") ?? extractTag(block, "content:encoded"),
+      summary: extractTag(block, "summary"),
+    };
+  });
 }
 
 async function fetchFeed(src: FeedSource): Promise<NewsItem[]> {
@@ -65,9 +123,8 @@ async function fetchFeed(src: FeedSource): Promise<NewsItem[]> {
       throw new Error(`${src.source}: HTTP ${raw.status}`);
     }
     const text = await raw.text();
-    const feed = await parser.parseString(text);
     const out: NewsItem[] = [];
-    for (const item of feed.items ?? []) {
+    for (const item of parseRssItems(text)) {
       const link = item.link?.trim();
       if (!link || !item.title?.trim()) continue;
       const publishedAt = parseDate(item).toISOString();

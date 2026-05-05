@@ -4,6 +4,7 @@ import { analyzeMarketImpact } from "@/lib/llm";
 import { getClientIp, rateLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 30;

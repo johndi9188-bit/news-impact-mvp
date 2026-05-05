@@ -1,5 +1,5 @@
-import { createHash } from "crypto";
 import type { NewsItem } from "@/types/news";
+import { stableId } from "@/lib/id";
 
 const FETCH_TIMEOUT_MS = 10_000;
 const BASE = "https://finnhub.io/api/v1";
@@ -53,7 +53,7 @@ export async function fetchFinnhubGeneralNews(): Promise<{
         ? new Date(row.datetime * 1000).toISOString()
         : new Date().toISOString();
       const idBase = row.id != null ? `finnhub-${row.id}` : `finnhub-${link}`;
-      const id = createHash("sha256").update(idBase).digest("hex").slice(0, 24);
+      const id = stableId(idBase, 24);
       const summary = row.summary?.trim() || undefined;
       const src = row.source?.trim()
         ? `Finnhub · ${row.source}`
